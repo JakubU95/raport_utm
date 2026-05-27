@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Raport Serwisów — Źródła Ruchu 2025/2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --bg2: #13161e;
+    --bg3: #1a1e28;
+    --border: #252933;
+    --border2: #2e3445;
+    --text: #e8eaf0;
+    --text2: #8b90a0;
+    --text3: #555a6a;
+    --accent: #4f8ef7;
+    --accent2: #7eb8f7;
+    --green: #3ecf8e;
+    --red: #f76f6f;
+    --yellow: #f7c948;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.5; min-height: 100vh; }
+
+  /* HEADER */
+  header { border-bottom: 1px solid var(--border); padding: 24px 32px 20px; display: flex; align-items: baseline; gap: 16px; }
+  header h1 { font-family: var(--mono); font-size: 15px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); }
+  header span { font-family: var(--mono); font-size: 11px; color: var(--text3); letter-spacing: 0.05em; }
+
+  /* LAYOUT */
+  .container { max-width: 1280px; margin: 0 auto; padding: 24px 32px 48px; display: flex; flex-direction: column; gap: 24px; }
+
+  /* CONTROLS BAR */
+  .controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .controls-label { font-family: var(--mono); font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
+
+  .btn-group { display: flex; gap: 2px; }
+  .btn { font-family: var(--mono); font-size: 11px; padding: 6px 14px; border: 1px solid var(--border2); background: var(--bg2); color: var(--text2); cursor: pointer; letter-spacing: 0.04em; transition: all 0.15s; white-space: nowrap; }
+  .btn:first-child { border-radius: 4px 0 0 4px; }
+  .btn:last-child { border-radius: 0 4px 4px 0; }
+  .btn:only-child { border-radius: 4px; }
+  .btn:hover { background: var(--bg3); color: var(--text); border-color: var(--accent); }
+  .btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  .sep { width: 1px; height: 28px; background: var(--border); margin: 0 4px; }
+
+  /* SEARCH */
+  .search-wrap { position: relative; flex: 1; min-width: 180px; max-width: 280px; }
+  .search-wrap input { width: 100%; padding: 6px 10px 6px 30px; border: 1px solid var(--border2); background: var(--bg2); color: var(--text); font-family: var(--mono); font-size: 11px; border-radius: 4px; outline: none; }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-wrap::before { content: '⌕'; position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 14px; pointer-events: none; }
+
+  /* PANEL */
+  .panel { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .panel-header { padding: 12px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .panel-title { font-family: var(--mono); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text2); }
+  .panel-body { padding: 18px; }
+
+  /* CHART */
+  .chart-wrap { position: relative; width: 100%; height: 380px; }
+
+  /* LEGEND */
+  .legend { display: flex; flex-wrap: wrap; gap: 4px; padding: 12px 18px; border-top: 1px solid var(--border); }
+  .legend-item { display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 3px 8px; border-radius: 3px; border: 1px solid transparent; transition: all 0.15s; user-select: none; }
+  .legend-item:hover { border-color: var(--border2); background: var(--bg3); }
+  .legend-item.hidden { opacity: 0.3; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .legend-item span { font-family: var(--mono); font-size: 10px; color: var(--text2); }
+
+  /* TABLES GRID */
+  .tables-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 900px) { .tables-grid { grid-template-columns: 1fr; } }
+
+  /* TABLE */
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; }
+  thead tr { border-bottom: 1px solid var(--border2); }
+  th { padding: 8px 12px; text-align: left; font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; cursor: pointer; user-select: none; }
+  th:hover { color: var(--text2); }
+  th.sorted { color: var(--accent2); }
+  th .sort-arrow { margin-left: 4px; opacity: 0.5; }
+  th.sorted .sort-arrow { opacity: 1; }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; cursor: pointer; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--bg3); }
+  tbody tr.row-selected { background: rgba(79,142,247,0.08); }
+  tbody tr.row-hidden-source { opacity: 0.35; }
+  td { padding: 7px 12px; color: var(--text2); white-space: nowrap; }
+  td.name-cell { color: var(--text); font-weight: 500; }
+  td.num { text-align: right; color: var(--text); }
+  td.pos { color: var(--green); text-align: right; }
+  td.neg { color: var(--red); text-align: right; }
+  td.neutral { color: var(--text2); text-align: right; }
+
+  .color-pip { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 7px; vertical-align: middle; }
+
+  /* BADGES */
+  .badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; }
+  .badge-pos { background: rgba(62,207,142,0.12); color: var(--green); }
+  .badge-neg { background: rgba(247,111,111,0.12); color: var(--red); }
+
+  /* PIE FILTER */
+  .pie-filter { padding: 12px 18px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .pie-filter-chips { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; }
+  .chip { font-family: var(--mono); font-size: 10px; padding: 3px 9px; border-radius: 3px; border: 1px solid var(--border2); background: var(--bg3); color: var(--text2); cursor: pointer; transition: all 0.12s; user-select: none; display: flex; align-items: center; gap: 5px; }
+  .chip:hover { border-color: var(--accent); color: var(--text); }
+  .chip.chip-on { border-color: transparent; color: #fff; }
+  .chip-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .pie-filter-actions { display: flex; gap: 4px; flex-shrink: 0; }
+
+  /* FOOTER */
+  footer { border-top: 1px solid var(--border); padding: 16px 32px; font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: 0.04em; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Raport Źródeł Ruchu</h1>
+  <span>kwiecień 2025 — maj 2026 &nbsp;/&nbsp; 34 źródła &nbsp;/&nbsp; Unique Users</span>
+</header>
+
+<div class="container">
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <span class="controls-label">Okres:</span>
+    <div class="btn-group" id="period-btns">
+      <button class="btn active" data-period="all">Wszystkie</button>
+      <button class="btn" data-period="q2_25">Q2'25</button>
+      <button class="btn" data-period="q3_25">Q3'25</button>
+      <button class="btn" data-period="q4_25">Q4'25</button>
+      <button class="btn" data-period="q1_26">Q1'26</button>
+      <button class="btn" data-period="last2">Kwi–Maj'26</button>
+    </div>
+    <div class="sep"></div>
+    <span class="controls-label">Szukaj:</span>
+    <div class="search-wrap">
+      <input type="text" id="search-input" placeholder="filtruj źródła...">
+    </div>
+    <div class="sep"></div>
+    <button class="btn" id="btn-toggle-all">Ukryj wszystkie</button>
+    <button class="btn" id="btn-show-all">Pokaż wszystkie</button>
+  </div>
+
+  <!-- CHART -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Unique Users / miesiąc</span>
+      <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">kliknij legendę aby ukryć/pokazać · kliknij wiersz w tabeli aby wyróżnić</span>
+    </div>
+    <div class="panel-body">
+      <div class="chart-wrap">
+        <canvas id="mainChart" role="img" aria-label="Wykres liniowy UU według źródła ruchu">Dane UU dla źródeł ruchu.</canvas>
+      </div>
+    </div>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <!-- PIE CHART -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Udział procentowy źródeł</span>
+      <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">suma UU w wybranym okresie · kliknij segment lub chip aby filtrować</span>
+    </div>
+    <div class="pie-filter">
+      <div class="pie-filter-chips" id="pie-chips"></div>
+      <div class="pie-filter-actions">
+        <button class="btn" id="pie-select-all">Wszystkie</button>
+        <button class="btn" id="pie-clear-all">Wyczyść</button>
+      </div>
+    </div>
+    <div class="panel-body" style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;">
+      <div style="position:relative;width:280px;height:280px;flex-shrink:0;margin:0 auto;">
+        <canvas id="pieChart" role="img" aria-label="Wykres kołowy udziałów źródeł ruchu">Udziały procentowe źródeł ruchu.</canvas>
+      </div>
+      <div id="pie-legend" style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:200px;max-height:280px;overflow-y:auto;"></div>
+    </div>
+  </div>
+
+  <!-- TABLES -->
+  <div class="tables-grid">
+
+    <!-- TABLE 1: Summary -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Podsumowanie źródeł</span>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--text3)" id="tbl-period-label">pełny okres</span>
+      </div>
+      <div class="tbl-wrap">
+        <table id="summary-table">
+          <thead>
+            <tr>
+              <th data-col="label">Źródło <span class="sort-arrow">↕</span></th>
+              <th data-col="total" class="sorted">Suma UU <span class="sort-arrow">↓</span></th>
+              <th data-col="avg">Śr./mies. <span class="sort-arrow">↕</span></th>
+              <th data-col="max">Max <span class="sort-arrow">↕</span></th>
+            </tr>
+          </thead>
+          <tbody id="summary-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TABLE 2: YoY -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Porównanie rok do roku</span>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">Kwi'25 vs Kwi'26 · Maj'25 vs Maj'26</span>
+      </div>
+      <div class="tbl-wrap">
+        <table id="yoy-table">
+          <thead>
+            <tr>
+              <th data-col="label">Źródło <span class="sort-arrow">↕</span></th>
+              <th data-col="apr25">Kwi'25 <span class="sort-arrow">↕</span></th>
+              <th data-col="apr26">Kwi'26 <span class="sort-arrow">↕</span></th>
+              <th data-col="apr_pct" class="sorted">Δ Kwi <span class="sort-arrow">↓</span></th>
+              <th data-col="may25">Maj'25 <span class="sort-arrow">↕</span></th>
+              <th data-col="may26">Maj'26 <span class="sort-arrow">↕</span></th>
+              <th data-col="may_pct">Δ Maj <span class="sort-arrow">↕</span></th>
+            </tr>
+          </thead>
+          <tbody id="yoy-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<footer>Dane: olap_serwisy · Facebook scalony (Facebook+facebook+fb+combreak?utm_source=Facebook) · Instagram scalony (instagram+ig) · Wygenerowano: 2026</footer>
+
+<script>
+const MONTHS = ['Kwi\'25','Maj\'25','Cze\'25','Lip\'25','Sie\'25','Wrz\'25','Paź\'25','Lis\'25','Gru\'25','Sty\'26','Lut\'26','Mar\'26','Kwi\'26','Maj\'26'];
+const PERIODS = {
+  all:    {label:'pełny okres',     idx:[0,1,2,3,4,5,6,7,8,9,10,11,12,13]},
+  q2_25:  {label:'Q2 2025',         idx:[0,1,2]},
+  q3_25:  {label:'Q3 2025',         idx:[3,4,5]},
+  q4_25:  {label:'Q4 2025',         idx:[6,7,8]},
+  q1_26:  {label:'Q1 2026',         idx:[9,10,11]},
+  last2:  {label:'Kwi–Maj 2026',    idx:[12,13]},
+};
+
+const COLORS = [
+  '#4f8ef7','#e25c8a','#3ecf8e','#f7c948','#a78bfa','#fb923c','#34d399','#60a5fa',
+  '#f472b6','#facc15','#818cf8','#4ade80','#f87171','#38bdf8','#c084fc','#fbbf24',
+  '#86efac','#fb7185','#7dd3fc','#d8b4fe','#a3e635','#fca5a5','#67e8f9','#fdba74',
+  '#bbf7d0','#fcd34d','#93c5fd','#f9a8d4','#6ee7b7','#fde68a','#c7d2fe','#a5b4fc',
+  '#99f6e4','#fef08a'
+];
+
+const ALL_SOURCES = [
+  {id:'google',    label:'google',        UU:[273309,1786129,2059320,2313497,2043145,1649033,1471798,1491952,1429526,2081803,1751830,1595246,1705561,1748166]},
+  {id:'facebook',  label:'Facebook',      UU:[662302,4232741,4703462,5035087,4411767,4334455,3825722,4533845,4204811,3935046,3716400,3675827,3052545,2283622]},
+  {id:'instagram', label:'Instagram',     UU:[5088,26442,83776,28539,40730,36517,22020,30807,17118,51270,65291,40891,50818,134965]},
+  {id:'combreak',  label:'combreak',      UU:[446865,1862717,1748636,1674796,1583195,848650,128642,200768,56666,7767,3582,3550,3417,3318]},
+  {id:'travellead',label:'travellead',    UU:[48270,294875,367971,459835,398194,324660,333492,310291,296560,329329,303008,253546,265861,264231]},
+  {id:'msn',       label:'msn',           UU:[133712,762054,468818,345492,323949,293401,320307,294382,304943,350082,363366,362096,326463,322283]},
+  {id:'rtbhouse',  label:'rtbhouse',      UU:[13736,58375,57469,60019,70301,66473,74795,82043,129886,151695,156343,137388,148931,122170]},
+  {id:'bing',      label:'bing',          UU:[10235,73221,84735,102952,83887,74633,65836,53475,39585,68584,64080,65346,70623,61473]},
+  {id:'own',       label:'own',           UU:[5937,29997,29201,33648,30034,26414,26900,23493,22714,30737,30751,27441,26961,29733]},
+  {id:'android',   label:'android',       UU:[11700,35360,33014,33397,32321,29467,29366,29160,27745,23778,4984,4599,4094,3466]},
+  {id:'tiktok',    label:'tiktok',        UU:[967,8522,35334,23934,13066,22854,127869,269908,81644,96615,75683,78674,56013,70044]},
+  {id:'google_ads',label:'google_ads',    UU:[null,null,null,117,3340,13425,24446,134215,237601,126855,12773,21560,20710,21132]},
+  {id:'flashscore',label:'Flashscore.pl', UU:[9529,66542,42576,42488,55677,62613,58705,64825,51707,50043,47458,61477,51128,65565]},
+  {id:'demand',    label:'demand',        UU:[null,null,null,null,null,null,null,40293,113549,136691,235531,788,265,91]},
+  {id:'chatgpt',   label:'chatgpt.com',   UU:[3145,28619,25970,26750,30052,34780,35827,38523,33816,37060,32579,38279,30679,30784]},
+  {id:'taboola',   label:'taboola',       UU:[393,707,5232,5601,23501,18288,32070,48838,54732,73584,46787,56854,30580,38675]},
+  {id:'autopromocja',label:'autopromocja',UU:[null,null,null,null,null,1,null,157691,122250,25552,72785,13055,13406,2719]},
+  {id:'samito',    label:'Samito',        UU:[31,2350,2319,1808,947,16530,57347,83416,58750,61129,56528,63863,48102,36472]},
+  {id:'adwords',   label:'adwords',       UU:[932,90565,94320,7937,5621,85167,202,55,24,22,10,31,48,68]},
+  {id:'meta',      label:'meta',          UU:[219,2204,6248,3296,3963,8151,8779,66701,106573,6678,7140,19108,25483,2630]},
+  {id:'salesmanago',label:'salesmanago',  UU:[3797,17391,22085,44991,20585,22527,33502,14923,13767,18436,15005,22729,24388,12923]},
+  {id:'homescreen',label:'homescreen',    UU:[5574,28349,27597,28547,27746,26774,28638,28997,29921,31776,31113,33187,31743,28924]},
+  {id:'newsshowcase',label:'newsshowcase',UU:[null,null,null,null,5628,6415,25410,11573,29377,23841,20092,45923,14158,29572]},
+  {id:'autolog',   label:'autolog',       UU:[8635,28532,40856,46061,37249,8943,6443,6416,5821,7249,5340,4312,5020,4743]},
+  {id:'upday',     label:'upday',         UU:[2372,87245,82151,1091,298,182,146,126,89,95,89,86,73,75]},
+  {id:'richads',   label:'richads',       UU:[48,83,31,127112,57,11,10,5,6,5,1,8,3,7]},
+  {id:'tvlog',     label:'tvlog',         UU:[1131,25616,9189,6836,7301,10648,11041,10618,12467,10679,7957,11383,6437,7751]},
+  {id:'twitter',   label:'twitter',       UU:[1606,23935,21533,10221,7344,6850,8191,10173,4975,7243,14535,13671,17165,10970]},
+  {id:'synerise',  label:'synerise',      UU:[1304,12539,11174,11107,11173,7798,9109,24121,9363,2975,3217,6366,8936,7472]},
+  {id:'misspell',  label:'misspell',      UU:[1456,10526,13515,14730,10534,7799,6998,6191,6234,9604,7964,6013,6501,6887]},
+  {id:'plista',    label:'Plista',        UU:[284,16684,9168,9506,4782,4149,4462,4689,15776,15828,13840,618,25,14]},
+  {id:'sklik',     label:'sklik',         UU:[1475,11127,14974,8885,7827,7544,6423,6034,9780,9315,8461,7673,6720,7292]},
+  {id:'onet',      label:'onet',          UU:[1166,7385,18342,1858,122,1040,5660,1999,17910,26690,69,38,4068,243]},
+  {id:'wykop',     label:'wykop_pl',      UU:[5111,13484,12267,3539,11176,3739,8667,7882,3144,3052,2616,2582,6922,5183]},
+];
+
+// State
+let currentPeriod = 'all';
+let hiddenSources = new Set();
+let searchQuery = '';
+let summarySort = {col:'total', dir:-1};
+let yoySort = {col:'apr_pct', dir:-1};
+let chart = null;
+let pieHidden = new Set();
+
+// Helpers
+const fmt = v => v == null ? '—' : Math.round(v).toLocaleString('pl-PL');
+const fmtK = v => {
+  if(v == null) return '—';
+  if(v >= 1e6) return (v/1e6).toFixed(2)+'M';
+  if(v >= 1e3) return (v/1e3).toFixed(1)+'k';
+  return Math.round(v).toString();
+};
+const pct = (a,b) => (a==null||b==null||a===0) ? null : ((b-a)/a*100);
+const fmtPct = v => v == null ? '—' : (v>0?'+':'')+v.toFixed(1)+'%';
+
+function getPeriodIdx() { return PERIODS[currentPeriod].idx; }
+
+function getFilteredSources() {
+  const q = searchQuery.toLowerCase();
+  return ALL_SOURCES.filter(s => s.label.toLowerCase().includes(q));
+}
+
+function getSlice(uu, idx) { return idx.map(i => uu[i]).filter(v => v != null); }
+
+// CHART
+function buildChart() {
+  const idx = getPeriodIdx();
+  const labels = idx.map(i => MONTHS[i]);
+  const filtered = getFilteredSources();
+
+  const datasets = filtered.map((s, i) => {
+    const ci = ALL_SOURCES.indexOf(s);
+    const color = COLORS[ci % COLORS.length];
+    return {
+      label: s.label,
+      data: idx.map(i => s.UU[i] ?? null),
+      borderColor: color,
+      backgroundColor: color + '15',
+      borderWidth: 1.5,
+      pointRadius: idx.length <= 3 ? 4 : 2,
+      pointHoverRadius: 5,
+      tension: 0.3,
+      fill: false,
+      spanGaps: false,
+      hidden: hiddenSources.has(s.id)
+    };
+  });
+
+  if(chart) {
+    chart.data.labels = labels;
+    chart.data.datasets = datasets;
+    chart.update('none');
+  } else {
+    chart = new Chart(document.getElementById('mainChart').getContext('2d'), {
+      type: 'line',
+      data: {labels, datasets},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: {mode:'index', intersect:false},
+        animation: {duration: 200},
+        plugins: {
+          legend: {display:false},
+          tooltip: {
+            backgroundColor: '#1a1e28',
+            borderColor: '#2e3445',
+            borderWidth: 1,
+            titleColor: '#8b90a0',
+            bodyColor: '#e8eaf0',
+            titleFont: {family:"'IBM Plex Mono',monospace", size:10},
+            bodyFont: {family:"'IBM Plex Mono',monospace", size:11},
+            callbacks: {
+              label: c => c.parsed.y != null ? ` ${c.dataset.label}: ${Math.round(c.parsed.y).toLocaleString('pl-PL')}` : null
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: {color:'#1a1e28'},
+            ticks: {color:'#555a6a', font:{family:"'IBM Plex Mono',monospace",size:10}, autoSkip:false, maxRotation:45}
+          },
+          y: {
+            grid: {color:'#1a1e28'},
+            ticks: {
+              color:'#555a6a',
+              font:{family:"'IBM Plex Mono',monospace",size:10},
+              callback: v => {
+                if(v>=1e6) return (v/1e6).toFixed(1)+'M';
+                if(v>=1e3) return (v/1e3).toFixed(0)+'k';
+                return v;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+}
+
+function buildLegend() {
+  const legend = document.getElementById('legend');
+  const filtered = getFilteredSources();
+  legend.innerHTML = '';
+  filtered.forEach(s => {
+    const ci = ALL_SOURCES.indexOf(s);
+    const color = COLORS[ci % COLORS.length];
+    const div = document.createElement('div');
+    div.className = 'legend-item' + (hiddenSources.has(s.id) ? ' hidden' : '');
+    div.dataset.id = s.id;
+    div.innerHTML = `<span class="legend-dot" style="background:${color}"></span><span>${s.label}</span>`;
+    div.addEventListener('click', () => toggleSource(s.id));
+    legend.appendChild(div);
+  });
+}
+
+function toggleSource(id) {
+  if(hiddenSources.has(id)) hiddenSources.delete(id);
+  else hiddenSources.add(id);
+  buildLegend();
+  syncChartVisibility();
+  renderSummaryTable();
+}
+
+function syncChartVisibility() {
+  if(!chart) return;
+  const filtered = getFilteredSources();
+  filtered.forEach((s, i) => {
+    const meta = chart.getDatasetMeta(i);
+    if(meta) meta.hidden = hiddenSources.has(s.id);
+  });
+  chart.update('none');
+}
+
+// SUMMARY TABLE
+function calcSummaryRows() {
+  const idx = getPeriodIdx();
+  return getFilteredSources().map(s => {
+    const vals = getSlice(s.UU, idx);
+    const total = vals.reduce((a,b)=>a+b,0);
+    const avg = vals.length ? total/vals.length : 0;
+    const max = vals.length ? Math.max(...vals) : 0;
+    return {id:s.id, label:s.label, total, avg, max};
+  });
+}
+
+function renderSummaryTable() {
+  const rows = calcSummaryRows().sort((a,b) => {
+    const v = summarySort.dir * (a[summarySort.col] > b[summarySort.col] ? 1 : a[summarySort.col] < b[summarySort.col] ? -1 : 0);
+    return typeof a[summarySort.col] === 'string' ? -v : v;
+  });
+
+  document.getElementById('tbl-period-label').textContent = PERIODS[currentPeriod].label;
+
+  const tbody = document.getElementById('summary-tbody');
+  tbody.innerHTML = rows.map(r => {
+    const ci = ALL_SOURCES.findIndex(s=>s.id===r.id);
+    const color = COLORS[ci % COLORS.length];
+    const isHidden = hiddenSources.has(r.id);
+    return `<tr class="${isHidden?'row-hidden-source':''}" data-id="${r.id}" onclick="toggleSource('${r.id}')">
+      <td class="name-cell"><span class="color-pip" style="background:${color}"></span>${r.label}</td>
+      <td class="num">${fmtK(r.total)}</td>
+      <td class="num">${fmtK(r.avg)}</td>
+      <td class="num">${fmtK(r.max)}</td>
+    </tr>`;
+  }).join('');
+
+  // update sort indicators
+  document.querySelectorAll('#summary-table th').forEach(th => {
+    const col = th.dataset.col;
+    th.className = col === summarySort.col ? 'sorted' : '';
+    th.querySelector('.sort-arrow').textContent = col === summarySort.col ? (summarySort.dir === -1 ? '↓' : '↑') : '↕';
+  });
+}
+
+// YOY TABLE
+function calcYoyRows() {
+  return getFilteredSources().map(s => {
+    const apr25 = s.UU[0], apr26 = s.UU[12];
+    const may25 = s.UU[1], may26 = s.UU[13];
+    const apr_pct = pct(apr25, apr26);
+    const may_pct = pct(may25, may26);
+    return {id:s.id, label:s.label, apr25, apr26, apr_pct, may25, may26, may_pct};
+  });
+}
+
+function renderYoyTable() {
+  const rows = calcYoyRows().sort((a,b) => {
+    const av = a[yoySort.col] ?? -Infinity;
+    const bv = b[yoySort.col] ?? -Infinity;
+    const v = yoySort.dir * (av > bv ? 1 : av < bv ? -1 : 0);
+    return typeof av === 'string' ? -v : v;
+  });
+
+  const tbody = document.getElementById('yoy-tbody');
+  tbody.innerHTML = rows.map(r => {
+    const ci = ALL_SOURCES.findIndex(s=>s.id===r.id);
+    const color = COLORS[ci % COLORS.length];
+    const isHidden = hiddenSources.has(r.id);
+    const fmtD = (v) => {
+      if(v==null) return '<td class="neutral">—</td>';
+      const cls = v>5?'pos':v<-5?'neg':'neutral';
+      const badge = v>5?`<span class="badge badge-pos">${fmtPct(v)}</span>`:v<-5?`<span class="badge badge-neg">${fmtPct(v)}</span>`:`<span style="color:var(--text2);font-size:11px">${fmtPct(v)}</span>`;
+      return `<td class="${cls}">${badge}</td>`;
+    };
+    return `<tr class="${isHidden?'row-hidden-source':''}" data-id="${r.id}" onclick="toggleSource('${r.id}')">
+      <td class="name-cell"><span class="color-pip" style="background:${color}"></span>${r.label}</td>
+      <td class="num">${fmtK(r.apr25)}</td>
+      <td class="num">${fmtK(r.apr26)}</td>
+      ${fmtD(r.apr_pct)}
+      <td class="num">${fmtK(r.may25)}</td>
+      <td class="num">${fmtK(r.may26)}</td>
+      ${fmtD(r.may_pct)}
+    </tr>`;
+  }).join('');
+
+  document.querySelectorAll('#yoy-table th').forEach(th => {
+    const col = th.dataset.col;
+    th.className = col === yoySort.col ? 'sorted' : '';
+    th.querySelector('.sort-arrow').textContent = col === yoySort.col ? (yoySort.dir === -1 ? '↓' : '↑') : '↕';
+  });
+}
+
+// PIE CHART
+let pieChart = null;
+
+function buildPieChips() {
+  const chips = document.getElementById('pie-chips');
+  chips.innerHTML = '';
+  ALL_SOURCES.forEach((s, ci) => {
+    const color = COLORS[ci % COLORS.length];
+    const on = !pieHidden.has(s.id);
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (on ? ' chip-on' : '');
+    chip.style.background = on ? color + '30' : '';
+    chip.style.borderColor = on ? color : '';
+    chip.style.color = on ? color : '';
+    chip.dataset.id = s.id;
+    chip.innerHTML = `<span class="chip-dot" style="background:${color}"></span>${s.label}`;
+    chip.addEventListener('click', () => {
+      if(pieHidden.has(s.id)) pieHidden.delete(s.id);
+      else pieHidden.add(s.id);
+      buildPieChart();
+    });
+    chips.appendChild(chip);
+  });
+}
+
+function buildPieChart() {
+  buildPieChips();
+  const idx = getPeriodIdx();
+  const filtered = ALL_SOURCES.filter(s => !pieHidden.has(s.id));
+
+  const data = filtered.map(s => {
+    const vals = getSlice(s.UU, idx);
+    return {id: s.id, label: s.label, total: vals.reduce((a,b)=>a+b,0)};
+  }).filter(d => d.total > 0).sort((a,b) => b.total - a.total);
+
+  const grandTotal = data.reduce((a,b) => a + b.total, 0);
+  const colors = data.map(d => {
+    const ci = ALL_SOURCES.findIndex(s => s.id === d.id);
+    return COLORS[ci % COLORS.length];
+  });
+
+  if(pieChart) {
+    pieChart.data.labels = data.map(d => d.label);
+    pieChart.data.datasets[0].data = data.map(d => d.total);
+    pieChart.data.datasets[0].backgroundColor = colors;
+    pieChart.data.datasets[0].borderColor = colors.map(c => c);
+    pieChart.update('none');
+  } else {
+    pieChart = new Chart(document.getElementById('pieChart').getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: data.map(d => d.label),
+        datasets: [{
+          data: data.map(d => d.total),
+          backgroundColor: colors,
+          borderColor: '#13161e',
+          borderWidth: 2,
+          hoverBorderWidth: 3,
+          hoverOffset: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '58%',
+        animation: {duration: 200},
+        plugins: {
+          legend: {display: false},
+          tooltip: {
+            backgroundColor: '#1a1e28',
+            borderColor: '#2e3445',
+            borderWidth: 1,
+            titleColor: '#e8eaf0',
+            bodyColor: '#8b90a0',
+            titleFont: {family:"'IBM Plex Mono',monospace", size:11},
+            bodyFont: {family:"'IBM Plex Mono',monospace", size:10},
+            callbacks: {
+              label: c => {
+                const val = c.parsed;
+                const p = grandTotal > 0 ? (val/grandTotal*100).toFixed(1) : 0;
+                return ` ${Math.round(val).toLocaleString('pl-PL')} UU (${p}%)`;
+              }
+            }
+          }
+        },
+        onClick: (e, elements) => {
+          if(elements.length > 0) {
+            const id = data[elements[0].index].id;
+            if(pieHidden.has(id)) pieHidden.delete(id);
+            else pieHidden.add(id);
+            buildPieChart();
+          }
+        }
+      }
+    });
+  }
+
+  // Pie legend
+  const pieLeg = document.getElementById('pie-legend');
+  pieLeg.innerHTML = data.map((d, i) => {
+    const p = grandTotal > 0 ? (d.total/grandTotal*100) : 0;
+    const barW = Math.max(1, Math.round(p));
+    return `<div style="display:flex;align-items:center;gap:8px;padding:3px 6px;border-radius:3px;cursor:pointer;transition:background 0.1s;"
+                 onmouseover="this.style.background='#1a1e28'" onmouseout="this.style.background=''"
+                 onclick="(function(id){if(pieHidden.has(id))pieHidden.delete(id);else pieHidden.add(id);buildPieChart();}('${d.id}'))">
+      <span style="width:8px;height:8px;border-radius:50%;background:${colors[i]};flex-shrink:0;"></span>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--text);min-width:90px;flex-shrink:0;">${d.label}</span>
+      <div style="flex:1;height:3px;background:#1a1e28;border-radius:2px;min-width:40px;">
+        <div style="width:${barW}%;height:100%;background:${colors[i]};border-radius:2px;"></div>
+      </div>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--text2);min-width:42px;text-align:right;">${p.toFixed(1)}%</span>
+    </div>`;
+  }).join('');
+}
+
+function renderAll() {
+  buildChart();
+  buildLegend();
+  buildPieChart();
+  renderSummaryTable();
+  renderYoyTable();
+}
+
+// EVENT LISTENERS
+document.getElementById('period-btns').addEventListener('click', e => {
+  const btn = e.target.closest('[data-period]');
+  if(!btn) return;
+  currentPeriod = btn.dataset.period;
+  document.querySelectorAll('[data-period]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAll();
+});
+
+document.getElementById('search-input').addEventListener('input', e => {
+  searchQuery = e.target.value;
+  renderAll();
+});
+
+document.getElementById('btn-toggle-all').addEventListener('click', () => {
+  getFilteredSources().forEach(s => hiddenSources.add(s.id));
+  renderAll();
+});
+
+document.getElementById('btn-show-all').addEventListener('click', () => {
+  hiddenSources.clear();
+  renderAll();
+});
+
+// Sort summary
+document.querySelectorAll('#summary-table th').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.col;
+    if(summarySort.col === col) summarySort.dir *= -1;
+    else { summarySort.col = col; summarySort.dir = col==='label' ? 1 : -1; }
+    renderSummaryTable();
+  });
+});
+
+// Sort yoy
+document.querySelectorAll('#yoy-table th').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.col;
+    if(yoySort.col === col) yoySort.dir *= -1;
+    else { yoySort.col = col; yoySort.dir = col==='label' ? 1 : -1; }
+    renderYoyTable();
+  });
+});
+
+document.getElementById('pie-select-all').addEventListener('click', () => {
+  pieHidden.clear();
+  buildPieChart();
+});
+
+document.getElementById('pie-clear-all').addEventListener('click', () => {
+  ALL_SOURCES.forEach(s => pieHidden.add(s.id));
+  buildPieChart();
+});
+
+// INIT
+renderAll();
+</script>
+</body>
+</html>
